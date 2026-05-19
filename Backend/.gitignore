@@ -1,0 +1,14 @@
+node_modules
+smartContracts
+traces
+cache
+internal.js
+index.js
+utilities.js
+.env
+uploads/
+trialsScripts/
+temporaryTrials/*.json
+*.csv
+.idea/
+*.ts

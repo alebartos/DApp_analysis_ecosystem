@@ -1,0 +1,138 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+.spinner {
+  border: 8px solid #d0cdcd;
+  /* Light grey */
+  border-top: 8px solid #1f87cd;
+  /* Blue */
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner-container {
+  display: none; /* flex or none */
+  justify-content: center;
+  align-items: center;
+}
+
+#errorParser {
+  margin-top: 5px;
+  border-radius: 10px;
+}
+
+/* Dark Mode per json editor */
+[data-bs-theme="dark"] .jsoneditor {
+    border-color: #495057 !important;
+    background-color: #212529 !important;
+}
+
+[data-bs-theme="dark"] .jsoneditor-menu {
+    background-color: #2b3035 !important;
+    border-bottom-color: #495057 !important;
+}
+
+[data-bs-theme="dark"] .jsoneditor-menu > button {
+    filter: invert(1);
+}
+
+[data-bs-theme="dark"] .jsoneditor-tree,
+[data-bs-theme="dark"] .jsoneditor-tree table,
+[data-bs-theme="dark"] .jsoneditor-separator,
+[data-bs-theme="dark"] .jsoneditor-readonly {
+    background-color: #212529 !important;
+    color: #e9ecef !important;
+}
+
+[data-bs-theme="dark"] div.jsoneditor-field {
+    color: #e06c75 !important; 
+}
+
+[data-bs-theme="dark"] div.jsoneditor-value {
+    color: #98c379 !important; 
+}
+
+[data-bs-theme="dark"] div.jsoneditor-value.jsoneditor-string {
+    color: #61afef !important;
+}
+
+[data-bs-theme="dark"] .jsoneditor-navigation-bar {
+    background-color: #2b3035 !important;
+    border-bottom: 1px solid #495057 !important;
+    color: #a6a6a6 !important;
+}
+
+[data-bs-theme="dark"] .jsoneditor-navigation-bar span.jsoneditor-navigation-item {
+    color: #e9ecef !important;
+}
+
+[data-bs-theme="dark"] div.jsoneditor-search input {
+    background-color: #212529 !important;
+    color: white !important;
+    border: 1px solid #495057 !important;
+}
+
+[data-bs-theme="dark"] div.jsoneditor-search .jsoneditor-results {
+    color: #a6a6a6 !important;
+}
+
+[data-bs-theme="dark"] div.jsoneditor-search {
+    background-color: transparent !important;
+}
+
+[data-bs-theme="dark"] div.jsoneditor-search .jsoneditor-frame {
+    background-color: #212529 !important;
+    border-color: #495057 !important;
+}
+
+[data-bs-theme="dark"] div.jsoneditor-search .jsoneditor-frame > button {
+    filter: invert(1) brightness(200%) !important;
+    opacity: 1 !important;
+}

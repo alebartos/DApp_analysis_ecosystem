@@ -1,9 +1,0 @@
-[submodule "backend"]
-	path = Backend
-	url = https://github.com/alebartos/BlockchainDataExtraction
-[submodule "BlockchainProcessMining_frontend"]
-	path = Frontend
-	url = https://github.com/alebartos/BlockchainProcessMining_frontend
-[submodule "CoBlocklyBackend"]
-	path = CoBlocklyBackend
-	url = https://github.com/alebartos/CoBlocklyBackend.git
