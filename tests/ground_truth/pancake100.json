@@ -1,0 +1,57 @@
+{
+  "dataset": "pancake100",
+  "records": 100,
+  "normalized_rows": 228,
+  "normalized_columns": [
+    "inputs_inputId",
+    "inputs_inputName",
+    "inputs_type",
+    "inputs_inputValue",
+    "txHash",
+    "blockNumber",
+    "contractAddress",
+    "sender",
+    "gasUsed",
+    "activity",
+    "timestamp",
+    "inputs__id"
+  ],
+  "events": 228,
+  "objects": 50,
+  "relations": 114,
+  "event_types": [
+    "approve",
+    "sendFrom",
+    "transfer"
+  ],
+  "object_types": [
+    "inputs_inputValue"
+  ],
+  "sample_object_ids": [
+    "152649eA73beAb28c5b49B26eb48f7EAD6d4c898",
+    "7fBf75F9D69612F83734d1105AD16ADa0B309560",
+    "31c2F6fcFf4F8759b3Bd5Bf0e1084A055615c768",
+    "13f4EA83D0bd40E75C8222255bc855a974568Dd4",
+    "40f1EF2315fe69a9450c7bfB52feC5d6373B044C"
+  ],
+  "sample_relations": [
+    {
+      "ocel:eid": "0",
+      "ocel:oid": "152649eA73beAb28c5b49B26eb48f7EAD6d4c898",
+      "ocel:type": "inputs_inputValue",
+      "ocel:qualifier": ""
+    },
+    {
+      "ocel:eid": "2",
+      "ocel:oid": "7fBf75F9D69612F83734d1105AD16ADa0B309560",
+      "ocel:type": "inputs_inputValue",
+      "ocel:qualifier": ""
+    },
+    {
+      "ocel:eid": "4",
+      "ocel:oid": "31c2F6fcFf4F8759b3Bd5Bf0e1084A055615c768",
+      "ocel:type": "inputs_inputValue",
+      "ocel:qualifier": ""
+    }
+  ]
+}

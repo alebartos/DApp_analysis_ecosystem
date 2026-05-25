@@ -1,9 +1,4 @@
 /**
- * Fase 1 — Normalizzazione JSON
- * Equivalente JS di pd.json_normalize da Log_to_ocel (data_service.py)
- */
-
-/**
  * Rileva quali colonne contengono array di oggetti.
  * @param {Object[]} records
  * @returns {{ nested: string[], flat: string[] }}

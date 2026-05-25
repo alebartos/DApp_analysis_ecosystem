@@ -1,0 +1,56 @@
+{
+  "dataset": "fantom100",
+  "records": 100,
+  "normalized_rows": 84,
+  "normalized_columns": [
+    "inputs_inputId",
+    "inputs_inputName",
+    "inputs_type",
+    "inputs_inputValue",
+    "inputs__id",
+    "txHash",
+    "contractAddress",
+    "sender",
+    "gasUsed",
+    "activity",
+    "blockNumber",
+    "timestamp"
+  ],
+  "events": 84,
+  "objects": 10,
+  "relations": 84,
+  "event_types": [
+    "buyEggs",
+    "hatchEggs"
+  ],
+  "object_types": [
+    "inputs_inputValue"
+  ],
+  "sample_object_ids": [
+    "8De512bfE297e6b9D5f267dF714343471b0408fb",
+    "456AB25eD0754660EF2efafFCe4e005aE1bF367c",
+    "F4767C87F7f9DF53eA19Bce800c9022C1032767b",
+    "361665f2C47a2b94081E1F0688ad9383446267e0",
+    "CbfDbe100De76aA023b76f855D21a952Ac50d78e"
+  ],
+  "sample_relations": [
+    {
+      "ocel:eid": "0",
+      "ocel:oid": "8De512bfE297e6b9D5f267dF714343471b0408fb",
+      "ocel:type": "inputs_inputValue",
+      "ocel:qualifier": ""
+    },
+    {
+      "ocel:eid": "1",
+      "ocel:oid": "456AB25eD0754660EF2efafFCe4e005aE1bF367c",
+      "ocel:type": "inputs_inputValue",
+      "ocel:qualifier": ""
+    },
+    {
+      "ocel:eid": "2",
+      "ocel:oid": "F4767C87F7f9DF53eA19Bce800c9022C1032767b",
+      "ocel:type": "inputs_inputValue",
+      "ocel:qualifier": ""
+    }
+  ]
+}
