@@ -16,6 +16,8 @@ const upload = multer({ dest: "uploads/" });
 const port = 8000;
 const { setEventTypes } = require("./ocelMapping/eventTypes");
 const {queryJsonPath} = require("./jsonQuery/jsonQuery");
+const { normalizeData, detectNestedColumns } = require("./services/ocelService/normalizer");
+const { buildOcel, getOcelStats } = require("./services/ocelService/ocelBuilder");
 app.use(cors());
 
 // Middleware: Logging for every request
@@ -1353,6 +1355,57 @@ app.post("/api/simulate/mempool-txs", async (req, res) => {
             details: err.message
         });
 	}
+});
+
+app.post("/api/ocel/detect", (req, res) => {
+	const { records } = req.body;
+	if (!Array.isArray(records) || records.length === 0)
+		return res.status(400).json({ error: "records mancanti o vuoti" });
+
+	const { nested, flat } = detectNestedColumns(records);
+
+	const normalizedColumns = {};
+	for (const col of nested) {
+		const idx = nested.indexOf(col);
+		const norm = normalizeData(records.slice(0, 20), [idx]);
+		if (norm && norm.normalized.length > 0) {
+			normalizedColumns[col] = Object.keys(norm.normalized[0]).filter(
+				(k) => k.startsWith(col + "_") && !k.endsWith("__id")
+			);
+		} else {
+			normalizedColumns[col] = [];
+		}
+	}
+
+	res.json({ nested, flat, normalizedColumns });
+});
+
+app.post("/api/ocel/build", (req, res) => {
+	const { records, nestedColName, objectTypeCol, activityCol, timestampCol } = req.body;
+	if (!Array.isArray(records) || !nestedColName || !objectTypeCol)
+		return res.status(400).json({ error: "parametri mancanti" });
+
+	const { nested, flat } = detectNestedColumns(records);
+	const idx = nested.indexOf(nestedColName);
+	if (idx === -1)
+		return res.status(400).json({ error: `colonna "${nestedColName}" non trovata` });
+
+	const norm = normalizeData(records, [idx]);
+	if (!norm) return res.status(400).json({ error: "normalizzazione fallita" });
+
+	const activity = activityCol || "activity";
+	const timestamp = timestampCol || "timestamp";
+	const eventAttrs = flat.filter((c) => c !== activity && c !== timestamp);
+
+	const ocel = buildOcel(norm.normalized, {
+		activity,
+		timestamp,
+		objectTypes: [objectTypeCol],
+		eventAttrs,
+		objectAttrs: {},
+	});
+	const stats = getOcelStats(ocel);
+	res.json({ ocel, stats, normalizedRows: norm.normalized.length });
 });
 
 // Start the server

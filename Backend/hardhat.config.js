@@ -68,24 +68,10 @@ module.exports = {
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {
-      chains: {
-        137: {
-          hardforkHistory: {
-            berlin: 10000000,
-            london: 20000000,
-          },
-        },
-        80002: {
-          hardforkHistory: {
-            berlin: 10000000,
-            london: 20000000,
-          },
-        }
-      },
       forking: {
-        url: process.env.WEB3_ALCHEMY_MAINNET_URL,
+        url: process.env.WEB3_ALCHEMY_MAINNET_URL || "https://eth-mainnet.alchemyapi.io/v2/placeholder",
         blockNumber: 12427648,
-        enabled: true
+        enabled: !!process.env.WEB3_ALCHEMY_MAINNET_URL
       },
       chainId: 1
     },

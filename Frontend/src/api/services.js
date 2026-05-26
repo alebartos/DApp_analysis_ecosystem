@@ -221,6 +221,28 @@ function findAllValuesByKey(obj, key) {
 
 }
 
+export const _ocelDetect = async (records) => {
+    try {
+        const response = await axios.post(serverUrl + "/api/ocel/detect", { records });
+        return { status: response.status, data: response.data };
+    } catch (error) {
+        console.error(error);
+        return { status: error?.response?.status, data: error?.response?.data };
+    }
+};
+
+export const _ocelBuild = async (records, nestedColName, objectTypeCol, activityCol, timestampCol) => {
+    try {
+        const response = await axios.post(serverUrl + "/api/ocel/build", {
+            records, nestedColName, objectTypeCol, activityCol, timestampCol
+        });
+        return { status: response.status, data: response.data };
+    } catch (error) {
+        console.error(error);
+        return { status: error?.response?.status, data: error?.response?.data };
+    }
+};
+
 export const getData = async ({ type, query}) => {
   try {
     console.log("[Service] Fetching data with type:", type, "and query:", query);
