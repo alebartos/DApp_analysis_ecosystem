@@ -5,6 +5,9 @@
 
 const { buildOcel, getOcelStats } = require('../Backend/services/ocelService/ocelBuilder.js');
 const { normalizeData, detectNestedColumns } = require('../Backend/services/ocelService/normalizer.js');
+const { applyE2OQualifiers, getE2OCombinations } = require('../Backend/services/ocelService/e2oQualifiers.js');
+const { buildO2OEnrichment, getO2OPairs } = require('../Backend/services/ocelService/o2oEnrichment.js');
+const { applyO2OQualifiers } = require('../Backend/services/ocelService/o2oQualifiers.js');
 const path = require('path');
 const fs   = require('fs');
 
@@ -78,6 +81,62 @@ for (const { name, file } of DATASETS) {
     console.log(`  ERR object IDs mancanti in JS: ${missing}`);
     failed++;
   }
+}
+
+// ─── Fase 3: confronto E2O qualifiers + O2O enrichment + O2O qualifiers ───────
+
+console.log('\n\n=== FASE 3 — confronto con Python ===');
+
+function runJsPhase3(datasetFile) {
+  const raw     = JSON.parse(fs.readFileSync(path.join(__dirname, 'input_data', datasetFile)));
+  const records = (Array.isArray(raw) ? raw : Object.values(raw)).filter(r => Object.keys(r).length > 0);
+  const { nested } = detectNestedColumns(records);
+  const inputsIdx  = nested.indexOf('inputs');
+  const norm = normalizeData(records, [inputsIdx]);
+  if (!norm) return null;
+
+  let ocel = buildOcel(norm.normalized, {
+    activity: 'activity', timestamp: 'timestamp',
+    objectTypes: ['inputs_inputValue', 'sender'],
+    eventAttrs: ['txHash', 'gasUsed'], objectAttrs: {},
+  });
+
+  // 3a — E2O qualifiers: stessa logica Python (ogni combo → "{activity}_qual")
+  const combos = getE2OCombinations(ocel);
+  const e2oMap = {};
+  for (const c of combos) e2oMap[`${c.objectType}|${c.activity}`] = `${c.activity}_qual`;
+  ocel = applyE2OQualifiers(ocel, e2oMap);
+  const relationsAfterE2O = ocel.relations.length;
+
+  // 3b — O2O enrichment
+  ocel = buildO2OEnrichment(ocel);
+  const o2oPairs = getO2OPairs(ocel).length;
+
+  // 3c — O2O qualifiers: mappa prima coppia → "co_occurrence"
+  const pairs = getO2OPairs(ocel);
+  const o2oMap = {};
+  if (pairs.length > 0) o2oMap[`${pairs[0].oid}|${pairs[0].oid_2}`] = 'co_occurrence';
+  ocel = applyO2OQualifiers(ocel, o2oMap);
+  const o2oAfterQualifiers = ocel.o2o.length;
+
+  return { relationsAfterE2O, o2oPairs, o2oAfterQualifiers };
+}
+
+for (const { name, file } of DATASETS) {
+  const gtPath = path.join(__dirname, 'ground_truth', `${name}_phase3.json`);
+  if (!fs.existsSync(gtPath)) {
+    console.log(`\n[${name}] phase3 ground truth non trovato — esegui prima python_ground_truth.py`);
+    continue;
+  }
+
+  const gt = JSON.parse(fs.readFileSync(gtPath));
+  const js = runJsPhase3(file);
+  if (!js) { console.log(`\n[${name}] JS fase3 pipeline fallita`); continue; }
+
+  console.log(`\n=== ${name} ===`);
+  check('relations_after_e2o', js.relationsAfterE2O, gt.relations_after_e2o);
+  check('o2o_pairs',           js.o2oPairs,          gt.o2o_pairs);
+  check('o2o_after_qualifiers', js.o2oAfterQualifiers, gt.o2o_after_qualifiers);
 }
 
 console.log(`\n${'─'.repeat(50)}`);
