@@ -12,7 +12,7 @@ import {
     _ocelDetect, _ocelBuild,
     _ocelE2OCombinations, _ocelE2OQualifiers,
     _ocelO2OEnrich, _ocelO2OQualifiers,
-    _ocelGetSession, _ocelDeleteSession,
+    _ocelGetSession, _ocelDeleteSession, _ocelExport,
 } from '../api/services';
 
 function OcelMapping() {
@@ -237,21 +237,31 @@ function OcelMapping() {
 
     // ── download ─────────────────────────────────────────────────────────────────
 
-    const handleDownload = async (suffix = 'phase2') => {
-        let data = ocelData;
-        // per le fasi successive alla 2, scarica dalla sessione (OCEL aggiornato)
-        if (suffix !== 'phase2' && sessionId) {
-            const res = await _ocelGetSession(sessionId);
-            if (res.status === 200) data = res.data.ocel;
-        }
-        if (!data) return;
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const triggerDownload = (blob, filename) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `ocel_${fileName.replace('.json', '')}_${suffix}.json`;
+        a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
+    };
+
+    // Fase 2: scarica snapshot locale (OCEL non ancora modificato dalla fase 3)
+    const handleDownloadPhase2 = () => {
+        if (!ocelData) return;
+        const blob = new Blob([JSON.stringify(ocelData, null, 2)], { type: 'application/json' });
+        const baseName = fileName.replace(/\.json$/i, '');
+        triggerDownload(blob, `ocel_${baseName}_phase2.json`);
+    };
+
+    // Fase 3+: scarica dalla sessione nel formato scelto via endpoint /api/ocel/export
+    const handleExport = async (format) => {
+        if (!sessionId) return;
+        const res = await _ocelExport(sessionId, format);
+        if (!res.data) return;
+        const baseName = fileName.replace(/\.json$/i, '');
+        const ext = format === 'csv' ? 'csv' : format === 'jsonocel' ? 'jsonocel' : 'json';
+        triggerDownload(res.data, `ocel_${baseName}.${ext}`);
     };
 
     // ── reset ────────────────────────────────────────────────────────────────────
@@ -419,7 +429,7 @@ function OcelMapping() {
 
                             <Stack direction="row" spacing={2}>
                                 <Button variant="outlined" onClick={reset}>Change file</Button>
-                                <Button variant="outlined" onClick={() => handleDownload('phase2')}>Download JSON</Button>
+                                <Button variant="outlined" onClick={handleDownloadPhase2}>Download JSON</Button>
                                 <Button variant="contained" onClick={handleGoToFase3}>Configure Phase 3</Button>
                             </Stack>
                         </Box>
@@ -473,7 +483,7 @@ function OcelMapping() {
 
                             <Stack direction="row" spacing={2}>
                                 <Button variant="outlined" onClick={() => setStep('result')}>Back</Button>
-                                <Button variant="outlined" onClick={() => handleDownload('phase2')}>Download JSON (Phase 2)</Button>
+                                <Button variant="outlined" onClick={handleDownloadPhase2}>Download JSON (Phase 2)</Button>
                                 <Button variant="contained" onClick={handleApplyE2O}>Apply & go to O2O</Button>
                             </Stack>
                         </Box>
@@ -538,7 +548,7 @@ function OcelMapping() {
 
                             <Stack direction="row" spacing={2}>
                                 <Button variant="outlined" onClick={() => setStep('e2oQual')}>Back</Button>
-                                <Button variant="outlined" onClick={() => handleDownload('phase3a')}>Download JSON (Phase 3a)</Button>
+                                <Button variant="outlined" onClick={() => handleExport('json')}>Download JSON (Phase 3a)</Button>
                                 <Button variant="contained" onClick={handleApplyO2O}>Apply O2O Qualifiers</Button>
                             </Stack>
                         </Box>
@@ -563,9 +573,19 @@ function OcelMapping() {
                                 ))}
                             </Stack>
 
-                            <Stack direction="row" spacing={2}>
+                            <Stack direction="row" spacing={2} flexWrap="wrap">
                                 <Button variant="outlined" onClick={reset}>Load another file</Button>
-                                <Button variant="contained" onClick={() => handleDownload('phase3_complete')}>Download JSON (Phase 3)</Button>
+                                <Button variant="contained" onClick={() => handleExport('json')}>
+                                    Download JSON
+                                </Button>
+                                <Button variant="contained" onClick={() => handleExport('jsonocel')}
+                                    sx={{ backgroundColor: '#5316ec', '&:hover': { backgroundColor: '#3d0fb5' } }}>
+                                    Download JSONOCEL
+                                </Button>
+                                <Button variant="contained" onClick={() => handleExport('csv')}
+                                    sx={{ backgroundColor: '#38a651', '&:hover': { backgroundColor: '#2f6749' } }}>
+                                    Download CSV
+                                </Button>
                             </Stack>
                         </Box>
                     )}

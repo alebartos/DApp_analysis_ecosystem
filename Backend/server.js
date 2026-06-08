@@ -21,6 +21,7 @@ const { buildOcel, getOcelStats } = require("./services/ocelService/ocelBuilder"
 const { applyE2OQualifiers, getE2OCombinations } = require("./services/ocelService/e2oQualifiers");
 const { buildO2OEnrichment, getO2OPairs } = require("./services/ocelService/o2oEnrichment");
 const { applyO2OQualifiers } = require("./services/ocelService/o2oQualifiers");
+const { toOcel2Json, toFlatCsv } = require("./services/ocelService/ocelExporter");
 app.use(cors());
 
 // Middleware: Logging for every request
@@ -1512,6 +1513,38 @@ app.get("/api/ocel/session/:id", (req, res) => {
 app.delete("/api/ocel/session/:id", (req, res) => {
 	deleteSession(req.params.id);
 	res.json({ ok: true });
+});
+
+// ── OCEL export (Fase 5) ──────────────────────────────────────────────────────
+
+app.get("/api/ocel/export/:id/jsonocel", (req, res) => {
+	const ocel = getSessionOcel(req.params.id);
+	if (!ocel) return res.status(404).json({ error: "sessione non trovata o scaduta" });
+	const exported = toOcel2Json(ocel);
+	const baseName = `ocel_${req.params.id}`;
+	res.setHeader("Content-Disposition", `attachment; filename="${baseName}.jsonocel"`);
+	res.setHeader("Content-Type", "application/json");
+	res.send(JSON.stringify(exported, null, 2));
+});
+
+app.get("/api/ocel/export/:id/json", (req, res) => {
+	const ocel = getSessionOcel(req.params.id);
+	if (!ocel) return res.status(404).json({ error: "sessione non trovata o scaduta" });
+	const exported = toOcel2Json(ocel);
+	const baseName = `ocel_${req.params.id}`;
+	res.setHeader("Content-Disposition", `attachment; filename="${baseName}.json"`);
+	res.setHeader("Content-Type", "application/json");
+	res.send(JSON.stringify(exported, null, 2));
+});
+
+app.get("/api/ocel/export/:id/csv", (req, res) => {
+	const ocel = getSessionOcel(req.params.id);
+	if (!ocel) return res.status(404).json({ error: "sessione non trovata o scaduta" });
+	const csv = toFlatCsv(ocel);
+	const baseName = `ocel_${req.params.id}`;
+	res.setHeader("Content-Disposition", `attachment; filename="${baseName}.csv"`);
+	res.setHeader("Content-Type", "text/csv");
+	res.send(csv);
 });
 
 // Start the server

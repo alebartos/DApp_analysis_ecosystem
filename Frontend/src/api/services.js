@@ -294,6 +294,15 @@ export const _ocelDeleteSession = async (sessionId) => {
     } catch (_) {}
 };
 
+export const _ocelExport = async (sessionId, format) => {
+    try {
+        const response = await axios.get(serverUrl + `/api/ocel/export/${sessionId}/${format}`, { responseType: 'blob' });
+        return { status: response.status, data: response.data };
+    } catch (error) {
+        return { status: error?.response?.status, data: null };
+    }
+};
+
 export const getData = async ({ type, query}) => {
   try {
     console.log("[Service] Fetching data with type:", type, "and query:", query);
