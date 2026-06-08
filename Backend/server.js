@@ -22,6 +22,7 @@ const { applyE2OQualifiers, getE2OCombinations } = require("./services/ocelServi
 const { buildO2OEnrichment, getO2OPairs } = require("./services/ocelService/o2oEnrichment");
 const { applyO2OQualifiers } = require("./services/ocelService/o2oQualifiers");
 const { toOcel2Json, toFlatCsv } = require("./services/ocelService/ocelExporter");
+const { createSession, getSessionOcel, updateSessionOcel, deleteSession } = require("./services/ocelService/sessionStore");
 app.use(cors());
 
 // Middleware: Logging for every request
@@ -1361,33 +1362,7 @@ app.post("/api/simulate/mempool-txs", async (req, res) => {
 	}
 });
 
-// ── OCEL session store ───────────────────────────────────────────────────────
-const ocelSessions = new Map();
-const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minuti
-
-function createSession(ocel) {
-	const id = `ocel_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
-	ocelSessions.set(id, { ocel, timer: setTimeout(() => ocelSessions.delete(id), SESSION_TTL_MS) });
-	return id;
-}
-
-function getSessionOcel(id) {
-	return ocelSessions.get(id)?.ocel ?? null;
-}
-
-function updateSessionOcel(id, ocel) {
-	const s = ocelSessions.get(id);
-	if (!s) return false;
-	s.ocel = ocel;
-	return true;
-}
-
-function deleteSession(id) {
-	const s = ocelSessions.get(id);
-	if (s) clearTimeout(s.timer);
-	ocelSessions.delete(id);
-}
-// ─────────────────────────────────────────────────────────────────────────────
+// session store importato da sessionStore.js
 
 app.post("/api/ocel/detect", (req, res) => {
 	const { records } = req.body;
