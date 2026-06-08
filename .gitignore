@@ -7,3 +7,6 @@ node_modules/
 
 # Cartella tesi locale
 Tesi/
+
+# Schema dati locali (documentazione, non committare)
+SCHEMA_DATI*.md

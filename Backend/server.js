@@ -18,6 +18,9 @@ const { setEventTypes } = require("./ocelMapping/eventTypes");
 const {queryJsonPath} = require("./jsonQuery/jsonQuery");
 const { normalizeData, detectNestedColumns } = require("./services/ocelService/normalizer");
 const { buildOcel, getOcelStats } = require("./services/ocelService/ocelBuilder");
+const { applyE2OQualifiers, getE2OCombinations } = require("./services/ocelService/e2oQualifiers");
+const { buildO2OEnrichment, getO2OPairs } = require("./services/ocelService/o2oEnrichment");
+const { applyO2OQualifiers } = require("./services/ocelService/o2oQualifiers");
 app.use(cors());
 
 // Middleware: Logging for every request
@@ -1357,6 +1360,34 @@ app.post("/api/simulate/mempool-txs", async (req, res) => {
 	}
 });
 
+// ── OCEL session store ───────────────────────────────────────────────────────
+const ocelSessions = new Map();
+const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minuti
+
+function createSession(ocel) {
+	const id = `ocel_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+	ocelSessions.set(id, { ocel, timer: setTimeout(() => ocelSessions.delete(id), SESSION_TTL_MS) });
+	return id;
+}
+
+function getSessionOcel(id) {
+	return ocelSessions.get(id)?.ocel ?? null;
+}
+
+function updateSessionOcel(id, ocel) {
+	const s = ocelSessions.get(id);
+	if (!s) return false;
+	s.ocel = ocel;
+	return true;
+}
+
+function deleteSession(id) {
+	const s = ocelSessions.get(id);
+	if (s) clearTimeout(s.timer);
+	ocelSessions.delete(id);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 app.post("/api/ocel/detect", (req, res) => {
 	const { records } = req.body;
 	if (!Array.isArray(records) || records.length === 0)
@@ -1381,16 +1412,18 @@ app.post("/api/ocel/detect", (req, res) => {
 });
 
 app.post("/api/ocel/build", (req, res) => {
-	const { records, nestedColName, objectTypeCol, activityCol, timestampCol } = req.body;
-	if (!Array.isArray(records) || !nestedColName || !objectTypeCol)
-		return res.status(400).json({ error: "parametri mancanti" });
+	const { records, nestedColNames, nestedColName, objectTypeCol, objectTypeCols, activityCol, timestampCol } = req.body;
+	const nestedNames = nestedColNames || (nestedColName ? [nestedColName] : null);
+	const objectTypes = objectTypeCols || (objectTypeCol ? [objectTypeCol] : null);
+	if (!Array.isArray(records) || !nestedNames || !nestedNames.length || !objectTypes)
+		return res.status(400).json({ error: "missing parameters" });
 
 	const { nested, flat } = detectNestedColumns(records);
-	const idx = nested.indexOf(nestedColName);
-	if (idx === -1)
-		return res.status(400).json({ error: `colonna "${nestedColName}" non trovata` });
+	const indices = nestedNames.map(n => nested.indexOf(n)).filter(i => i !== -1);
+	if (indices.length === 0)
+		return res.status(400).json({ error: "nested columns not found" });
 
-	const norm = normalizeData(records, [idx]);
+	const norm = normalizeData(records, indices);
 	if (!norm) return res.status(400).json({ error: "normalizzazione fallita" });
 
 	const activity = activityCol || "activity";
@@ -1400,12 +1433,85 @@ app.post("/api/ocel/build", (req, res) => {
 	const ocel = buildOcel(norm.normalized, {
 		activity,
 		timestamp,
-		objectTypes: [objectTypeCol],
+		objectTypes,
 		eventAttrs,
 		objectAttrs: {},
 	});
 	const stats = getOcelStats(ocel);
-	res.json({ ocel, stats, normalizedRows: norm.normalized.length });
+
+	// suggerisci qualifier da inputName per ogni (objectType, activity)
+	const suggestedQualifiers = {};
+	for (const row of norm.normalized) {
+		for (const objType of objectTypes) {
+			const val = row[objType];
+			if (val === null || val === undefined || typeof val === 'number') continue;
+			const act = row[activity];
+			if (!act) continue;
+			const key = `${objType}|${act}`;
+			// derive inputName col: inputs_inputValue → inputs_inputName
+			const nameCol = objType.replace(/_inputValue$/, '_inputName');
+			const inputName = nameCol !== objType ? row[nameCol] : null;
+			if (inputName && typeof inputName === 'string') {
+				if (!suggestedQualifiers[key]) suggestedQualifiers[key] = new Set();
+				suggestedQualifiers[key].add(inputName);
+			}
+		}
+	}
+	const qualifierSuggestions = {};
+	for (const [k, v] of Object.entries(suggestedQualifiers)) {
+		qualifierSuggestions[k] = [...v];
+	}
+
+	const sessionId = createSession(ocel);
+	res.json({ sessionId, ocel, stats, normalizedRows: norm.normalized.length, qualifierSuggestions });
+});
+
+app.post("/api/ocel/e2o-combinations", (req, res) => {
+	const { sessionId } = req.body;
+	const ocel = getSessionOcel(sessionId);
+	if (!ocel) return res.status(404).json({ error: "sessione non trovata o scaduta" });
+	const combinations = getE2OCombinations(ocel);
+	res.json({ combinations });
+});
+
+app.post("/api/ocel/e2o-qualifiers", (req, res) => {
+	const { sessionId, qualifierMap } = req.body;
+	if (!sessionId || !qualifierMap) return res.status(400).json({ error: "parametri mancanti" });
+	const ocel = getSessionOcel(sessionId);
+	if (!ocel) return res.status(404).json({ error: "sessione non trovata o scaduta" });
+	const updatedOcel = applyE2OQualifiers(ocel, qualifierMap);
+	updateSessionOcel(sessionId, updatedOcel);
+	res.json({ stats: getOcelStats(updatedOcel) });
+});
+
+app.post("/api/ocel/o2o-enrich", (req, res) => {
+	const { sessionId } = req.body;
+	const ocel = getSessionOcel(sessionId);
+	if (!ocel) return res.status(404).json({ error: "sessione non trovata o scaduta" });
+	const enrichedOcel = buildO2OEnrichment(ocel);
+	updateSessionOcel(sessionId, enrichedOcel);
+	res.json({ pairs: getO2OPairs(enrichedOcel) });
+});
+
+app.post("/api/ocel/o2o-qualifiers", (req, res) => {
+	const { sessionId, qualifierMap } = req.body;
+	if (!sessionId || !qualifierMap) return res.status(400).json({ error: "parametri mancanti" });
+	const ocel = getSessionOcel(sessionId);
+	if (!ocel) return res.status(404).json({ error: "sessione non trovata o scaduta" });
+	const updatedOcel = applyO2OQualifiers(ocel, qualifierMap);
+	updateSessionOcel(sessionId, updatedOcel);
+	res.json({ o2oCount: updatedOcel.o2o ? updatedOcel.o2o.length : 0 });
+});
+
+app.get("/api/ocel/session/:id", (req, res) => {
+	const ocel = getSessionOcel(req.params.id);
+	if (!ocel) return res.status(404).json({ error: "sessione non trovata o scaduta" });
+	res.json({ ocel });
+});
+
+app.delete("/api/ocel/session/:id", (req, res) => {
+	deleteSession(req.params.id);
+	res.json({ ok: true });
 });
 
 // Start the server

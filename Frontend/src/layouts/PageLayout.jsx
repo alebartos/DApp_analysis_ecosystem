@@ -28,7 +28,7 @@ const CardContentNoPadding = styled(CardContent)(
     `
 )
 
-const MAX_DISPLAY_SIZE = 49;
+const MAX_DISPLAY_SIZE = 49; // limit
 
 const limitJsonSize = (data) => {
     if (!data) return null;
@@ -94,6 +94,8 @@ function PageLayout({children, loading, setLoading}) {
 
 
     const path = window.location.pathname
+    const isOcelPage = path === '/data-mapping/ocel';
+    const isXesPage  = path === '/data-mapping/xes';
 
     const handleShowXes =() =>{
         setShowXes(!showXes)
@@ -201,8 +203,8 @@ function PageLayout({children, loading, setLoading}) {
     }
 
     const renderPageButtons=()=>{
-        switch(path){
-            case "/ocel":
+        switch(true){
+            case isOcelPage:
                 return(<Box display="flex" justifyContent="space-between" gap={2}>
                                         <Button component="label" variant="contained" startIcon={<FileUpload/>}
                                                 sx={{padding: 1, height: "55px"}}>
@@ -238,7 +240,7 @@ function PageLayout({children, loading, setLoading}) {
                                         </Button>
                                     </Box>
                 )
-            case "/xes":
+            case isXesPage:
                 return (<Box display="flex" justifyContent="space-between" gap={2}>
                                         <Button component="label" variant="contained" startIcon={<FileUpload/>}
                                                 sx={{padding: 1, height: "55px"}}>
@@ -292,52 +294,60 @@ function PageLayout({children, loading, setLoading}) {
                         <Card sx={{minWidth: "500px", height: "500px", backgroundColor: "#202020"}}>
                             <Box height="40px" display="flex" alignItems="center" justifyContent="space-between" padding={2}>
                                 <Typography variant="h5" color="#FFFFFF">Contract Logs</Typography>
-                                {path === "/ocel" && <Button variant="contained" sx={{padding: 1, width: "130px"}}
-                                         onClick={handleShowOcel}>{showOcel ? "Show Logs" : "Show OCEL"}</Button>}
-                                <Button disabled={!results} color="error"
+                                {isOcelPage && results && (
+                                    <Button variant="contained" sx={{padding: 1, width: "130px"}}
+                                        onClick={handleShowOcel}>{showOcel ? "Show OCEL" : "Show Logs"}</Button>
+                                )}
+                                {isOcelPage && (
+                                    <Button disabled={!ocel?.events?.length} color="error"
                                         onClick={handleDelete} sx={{padding: 0, '&.Mui-disabled': {color: 'rgba(255, 0, 0, 0.5)'}}}>
-                                    <Delete/>
-                                </Button>
-                                {path === "/xes" && <Button variant="contained" sx={{padding: 1, width: "130px"}}
-                                         onClick={handleShowXes}>{showXes ? "Show Logs" : "Show XES"}</Button>}
-                                <Button disabled={!results} color="error"
-                                        onClick={handleDeleteXes} sx={{padding: 0, '&.Mui-disabled': {color: 'rgba(255, 0, 0, 0.5)'}}}>
-                                    <Delete/>
-                                </Button>
+                                        <Delete/>
+                                    </Button>
+                                )}
+                                {isXesPage && (
+                                    <Button variant="contained" sx={{padding: 1, width: "130px"}}
+                                        onClick={handleShowXes}>{showXes ? "Show Logs" : "Show XES"}</Button>
+                                )}
+                                {!isOcelPage && !isXesPage && (
+                                    <Button disabled={!results} color="error"
+                                        onClick={handleDelete} sx={{padding: 0, '&.Mui-disabled': {color: 'rgba(255, 0, 0, 0.5)'}}}>
+                                        <Delete/>
+                                    </Button>
+                                )}
                             </Box>
                             <CardContentNoPadding sx={{ height: "calc(100% - 112px)", overflowY: "auto", overflowX: "auto", whiteSpace: "pre", overflow: "auto"}}>
                                 {
-                                     loading ? (
+                                    loading ? (
                                         <Box width="100%" height="100%" display="flex" justifyContent="center" alignItems="center">
                                             <CircularProgress />
                                         </Box>
-                                    ) : showOcel ? (
-                                        <JsonView value={ocel} style={{ ...darkTheme, fontSize: '14px' }} width="100%" />
+                                    ) : isOcelPage ? (
+                                        // sulla pagina OCEL: mostra OCEL di default, logs solo se richiesto
+                                        showOcel && results ? (
+                                            <JsonView value={limitJsonSize(results)} style={{ ...darkTheme, fontSize: '14px' }} width="100%" />
+                                        ) : ocel?.events?.length ? (
+                                            <JsonView value={limitJsonSize(ocel)} style={{ ...darkTheme, fontSize: '14px' }} width="100%" />
+                                        ) : null
                                     ) : showXes ? (
                                         <Box sx={{
                                             width: "100%",
                                             maxWidth: "100%",
-                                            overflowX: "auto",  // Enables horizontal scrolling
-                                            whiteSpace: "pre",  // Ensures text does not wrap
-                                            backgroundColor: "#1e1e1e", // Optional: Dark theme background
+                                            overflowX: "auto",
+                                            whiteSpace: "pre",
+                                            backgroundColor: "#1e1e1e",
                                             padding: 2
                                         }}>
-                                            <Box sx={{
-                                                display: "inline-block",  // Ensures the box takes the exact width of the XML content
-                                                minWidth: "100%"  // Prevents shrinking
-                                            }}>
+                                            <Box sx={{ display: "inline-block", minWidth: "100%" }}>
                                                 <XMLViewer xml={xes.xesString || "<empty></empty>"} />
                                             </Box>
                                         </Box>
                                     ) : results && (
-                                        <JsonView value={results} style={{ ...darkTheme, fontSize: '14px' }} width="100%" />
+                                        <JsonView value={limitJsonSize(results)} style={{ ...darkTheme, fontSize: '14px' }} width="100%" />
                                     )
                                 }
                             </CardContentNoPadding>
                         </Card>
-                        {
-                            renderPageButtons()
-                        }
+                        {!isOcelPage && renderPageButtons()}
                     </Stack>
                 </Grid>
             </Grid>

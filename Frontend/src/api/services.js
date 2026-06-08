@@ -231,16 +231,67 @@ export const _ocelDetect = async (records) => {
     }
 };
 
-export const _ocelBuild = async (records, nestedColName, objectTypeCol, activityCol, timestampCol) => {
+export const _ocelBuild = async (records, nestedColNames, objectTypeCols, activityCol, timestampCol) => {
     try {
         const response = await axios.post(serverUrl + "/api/ocel/build", {
-            records, nestedColName, objectTypeCol, activityCol, timestampCol
+            records, nestedColNames, objectTypeCols, activityCol, timestampCol
         });
         return { status: response.status, data: response.data };
     } catch (error) {
         console.error(error);
         return { status: error?.response?.status, data: error?.response?.data };
     }
+};
+
+export const _ocelE2OCombinations = async (sessionId) => {
+    try {
+        const response = await axios.post(serverUrl + "/api/ocel/e2o-combinations", { sessionId });
+        return { status: response.status, data: response.data };
+    } catch (error) {
+        return { status: error?.response?.status, data: error?.response?.data };
+    }
+};
+
+export const _ocelE2OQualifiers = async (sessionId, qualifierMap) => {
+    try {
+        const response = await axios.post(serverUrl + "/api/ocel/e2o-qualifiers", { sessionId, qualifierMap });
+        return { status: response.status, data: response.data };
+    } catch (error) {
+        return { status: error?.response?.status, data: error?.response?.data };
+    }
+};
+
+export const _ocelO2OEnrich = async (sessionId) => {
+    try {
+        const response = await axios.post(serverUrl + "/api/ocel/o2o-enrich", { sessionId });
+        return { status: response.status, data: response.data };
+    } catch (error) {
+        return { status: error?.response?.status, data: error?.response?.data };
+    }
+};
+
+export const _ocelO2OQualifiers = async (sessionId, qualifierMap) => {
+    try {
+        const response = await axios.post(serverUrl + "/api/ocel/o2o-qualifiers", { sessionId, qualifierMap });
+        return { status: response.status, data: response.data };
+    } catch (error) {
+        return { status: error?.response?.status, data: error?.response?.data };
+    }
+};
+
+export const _ocelGetSession = async (sessionId) => {
+    try {
+        const response = await axios.get(serverUrl + `/api/ocel/session/${sessionId}`);
+        return { status: response.status, data: response.data };
+    } catch (error) {
+        return { status: error?.response?.status, data: error?.response?.data };
+    }
+};
+
+export const _ocelDeleteSession = async (sessionId) => {
+    try {
+        await axios.delete(serverUrl + `/api/ocel/session/${sessionId}`);
+    } catch (_) {}
 };
 
 export const getData = async ({ type, query}) => {
