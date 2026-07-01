@@ -17,3 +17,6 @@ tests/input_data/beanstalk.json
 
 # File generati
 *.jsonocel
+
+# Guide locali
+GUIDA_*.md
