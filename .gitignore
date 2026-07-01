@@ -10,3 +10,10 @@ Tesi/
 
 # Schema dati locali (documentazione, non committare)
 SCHEMA_DATI*.md
+
+# Dataset scaricati (troppo grandi per git)
+tests/input_data/0x*.json
+tests/input_data/beanstalk.json
+
+# File generati
+*.jsonocel

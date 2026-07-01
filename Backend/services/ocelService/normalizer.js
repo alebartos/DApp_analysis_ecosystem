@@ -113,7 +113,7 @@ function normalizeData(records, colIndexes) {
 
   for (const col of colsToNormalize) {
     const rows = normalizeColumn(records, col, flat);
-    allRows.push(...rows);
+    for (const r of rows) allRows.push(r);
   }
 
   if (allRows.length === 0) return null;
